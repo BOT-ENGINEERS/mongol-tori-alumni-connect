@@ -1,4 +1,5 @@
 import ProfileCard from "./ProfileCard";
+import { Users } from "lucide-react";
 
 const mockProfiles = [
   {
@@ -12,17 +13,14 @@ const mockProfiles = [
     instagram: "https://instagram.com",
     company: "SpaceX Bangladesh",
     position: "Senior Engineer",
+    bio: "Passionate about robotics and space exploration. Leading hardware teams.",
     currentEducation: {
       institution: "BRAC University",
       degree: "BSc in EEE",
       year: "2018-2022",
     },
     pastEducation: [
-      {
-        institution: "Notre Dame College",
-        degree: "HSC",
-        year: "2016-2018",
-      },
+      { institution: "Notre Dame College", degree: "HSC", year: "2016-2018" },
     ],
   },
   {
@@ -35,17 +33,14 @@ const mockProfiles = [
     facebook: "https://facebook.com",
     company: "Google",
     position: "Software Engineer",
+    bio: "Building AI solutions for autonomous systems.",
     currentEducation: {
       institution: "BRAC University",
       degree: "BSc in CSE",
       year: "2017-2021",
     },
     pastEducation: [
-      {
-        institution: "Viqarunnisa Noon College",
-        degree: "HSC",
-        year: "2015-2017",
-      },
+      { institution: "Viqarunnisa Noon College", degree: "HSC", year: "2015-2017" },
     ],
   },
   {
@@ -58,17 +53,14 @@ const mockProfiles = [
     instagram: "https://instagram.com",
     semester: "7th Semester",
     teamRole: "Mechanical Lead",
+    bio: "Designing rover chassis and suspension systems.",
     currentEducation: {
       institution: "BRAC University",
       degree: "BSc in ME",
       year: "2021-Present",
     },
     pastEducation: [
-      {
-        institution: "Dhaka College",
-        degree: "HSC",
-        year: "2019-2021",
-      },
+      { institution: "Dhaka College", degree: "HSC", year: "2019-2021" },
     ],
   },
   {
@@ -81,34 +73,32 @@ const mockProfiles = [
     instagram: "https://instagram.com",
     semester: "5th Semester",
     teamRole: "Software Developer",
+    bio: "Working on autonomous navigation algorithms.",
     currentEducation: {
       institution: "BRAC University",
       degree: "BSc in CSE",
       year: "2022-Present",
     },
     pastEducation: [
-      {
-        institution: "Holy Cross College",
-        degree: "HSC",
-        year: "2020-2022",
-      },
+      { institution: "Holy Cross College", degree: "HSC", year: "2020-2022" },
     ],
   },
 ];
 
 const AlumniSection = () => {
   return (
-    <section id="alumni" className="py-16 md:py-24">
+    <section id="alumni" className="py-20 md:py-28">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-3">
+            <Users size={16} />
             Our Network
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mt-2">
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black text-foreground">
             Meet the <span className="text-gradient">Community</span>
           </h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
             Connect with alumni and current members of the Mongol-Tori Mars Rover team
           </p>
         </div>
@@ -128,7 +118,7 @@ const AlumniSection = () => {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="glass-card px-8 py-3 rounded-xl font-semibold border border-border hover:border-primary/50 hover:text-primary transition-all">
+          <button className="btn-outline px-8 py-3 rounded-xl">
             View All Members
           </button>
         </div>

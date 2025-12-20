@@ -1,4 +1,4 @@
-import { Mail, Phone, Linkedin, Facebook, Instagram, GraduationCap, Building } from "lucide-react";
+import { Mail, Phone, Linkedin, Facebook, Instagram, GraduationCap, Building, Star } from "lucide-react";
 
 interface Education {
   institution: string;
@@ -8,10 +8,10 @@ interface Education {
 
 interface ProfileProps {
   name: string;
-  role: "Alumni" | "Member";
+  role: "Alumni" | "Member" | "Advisor";
   photo: string;
   email: string;
-  phone: string;
+  phone?: string;
   linkedin?: string;
   facebook?: string;
   instagram?: string;
@@ -21,6 +21,7 @@ interface ProfileProps {
   position?: string;
   semester?: string;
   teamRole?: string;
+  bio?: string;
 }
 
 const ProfileCard = ({
@@ -38,72 +39,94 @@ const ProfileCard = ({
   position,
   semester,
   teamRole,
+  bio,
 }: ProfileProps) => {
+  const getRoleBadge = () => {
+    switch (role) {
+      case "Alumni":
+        return "badge-primary";
+      case "Advisor":
+        return "bg-foreground text-background";
+      default:
+        return "bg-secondary text-secondary-foreground";
+    }
+  };
+
   return (
-    <div className="glass-card rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+    <div className="card-elevated card-orange-hover p-6">
       {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-5">
         <div className="relative">
           <img
             src={photo}
             alt={name}
-            className="w-20 h-20 rounded-full object-cover avatar-ring"
+            className="w-16 h-16 rounded-full object-cover avatar-ring"
           />
           <span
-            className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
-              role === "Alumni"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground"
-            }`}
+            className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-bold rounded-full ${getRoleBadge()}`}
           >
+            {role === "Advisor" && <Star size={10} className="inline mr-0.5" />}
             {role}
           </span>
         </div>
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-foreground">{name}</h3>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold text-foreground truncate">{name}</h3>
           {role === "Alumni" && company && (
-            <div className="flex items-center gap-2 text-muted-foreground mt-1">
-              <Building size={14} />
-              <span className="text-sm">{position} at {company}</span>
+            <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
+              <Building size={12} />
+              <span className="text-sm truncate">{position} at {company}</span>
             </div>
           )}
           {role === "Member" && semester && (
-            <div className="flex items-center gap-2 text-muted-foreground mt-1">
-              <GraduationCap size={14} />
-              <span className="text-sm">{semester} • {teamRole}</span>
+            <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
+              <GraduationCap size={12} />
+              <span className="text-sm truncate">{semester} • {teamRole}</span>
+            </div>
+          )}
+          {role === "Advisor" && position && (
+            <div className="flex items-center gap-1.5 text-muted-foreground mt-0.5">
+              <Star size={12} />
+              <span className="text-sm truncate">{position}</span>
             </div>
           )}
         </div>
       </div>
 
+      {/* Bio */}
+      {bio && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{bio}</p>
+      )}
+
       {/* Contact Info */}
-      <div className="space-y-2 mb-6">
+      <div className="space-y-2 mb-5">
         <a
           href={`mailto:${email}`}
-          className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm"
+          className="flex items-center gap-2.5 text-muted-foreground hover:text-primary transition-colors text-sm"
         >
-          <Mail size={16} />
-          {email}
+          <Mail size={14} />
+          <span className="truncate">{email}</span>
         </a>
-        <a
-          href={`tel:${phone}`}
-          className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm"
-        >
-          <Phone size={16} />
-          {phone}
-        </a>
+        {phone && (
+          <a
+            href={`tel:${phone}`}
+            className="flex items-center gap-2.5 text-muted-foreground hover:text-primary transition-colors text-sm"
+          >
+            <Phone size={14} />
+            {phone}
+          </a>
+        )}
       </div>
 
       {/* Social Links */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-2 mb-5">
         {linkedin && (
           <a
             href={linkedin}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+            className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
           >
-            <Linkedin size={18} />
+            <Linkedin size={16} />
           </a>
         )}
         {facebook && (
@@ -111,9 +134,9 @@ const ProfileCard = ({
             href={facebook}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+            className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
           >
-            <Facebook size={18} />
+            <Facebook size={16} />
           </a>
         )}
         {instagram && (
@@ -121,24 +144,24 @@ const ProfileCard = ({
             href={instagram}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+            className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
           >
-            <Instagram size={18} />
+            <Instagram size={16} />
           </a>
         )}
       </div>
 
       {/* Education Timeline */}
       <div className="border-t border-border pt-4">
-        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <GraduationCap size={16} className="text-primary" />
+        <h4 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+          <GraduationCap size={14} className="text-primary" />
           Education
         </h4>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {currentEducation && (
-            <div className="relative pl-4 border-l-2 border-primary">
+            <div className="relative pl-3 border-l-2 border-primary">
               <span className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-primary" />
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {currentEducation.institution}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -146,10 +169,10 @@ const ProfileCard = ({
               </p>
             </div>
           )}
-          {pastEducation?.map((edu, index) => (
-            <div key={index} className="relative pl-4 border-l-2 border-border">
+          {pastEducation?.slice(0, 1).map((edu, index) => (
+            <div key={index} className="relative pl-3 border-l-2 border-border">
               <span className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {edu.institution}
               </p>
               <p className="text-xs text-muted-foreground">
