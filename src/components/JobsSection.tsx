@@ -44,23 +44,23 @@ const mockJobs = [
 
 const JobsSection = () => {
   return (
-    <section id="jobs" className="py-16 md:py-24 bg-secondary/20">
+    <section id="jobs" className="section-alt py-20 md:py-28">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-14 gap-6">
           <div>
-            <span className="text-primary font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-3">
               <Briefcase size={16} />
               Career Opportunities
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mt-2">
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-foreground">
               Alumni <span className="text-gradient">Job Board</span>
             </h2>
-            <p className="text-muted-foreground mt-3 max-w-xl">
+            <p className="text-muted-foreground mt-4 max-w-xl">
               Exclusive opportunities posted by our alumni network for current members
             </p>
           </div>
-          <button className="btn-primary px-6 py-3 rounded-xl font-semibold flex items-center gap-2 mt-6 md:mt-0">
+          <button className="btn-primary px-6 py-3 rounded-xl flex items-center gap-2">
             <Plus size={18} />
             Post a Job
           </button>
@@ -81,7 +81,7 @@ const JobsSection = () => {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <button className="glass-card px-8 py-3 rounded-xl font-semibold border border-border hover:border-primary/50 hover:text-primary transition-all">
+          <button className="btn-outline px-8 py-3 rounded-xl">
             View All Jobs
           </button>
         </div>

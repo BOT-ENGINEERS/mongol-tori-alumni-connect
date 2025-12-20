@@ -14,16 +14,329 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          company: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          posted_by: string | null
+          requirements: string | null
+          salary_range: string | null
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          posted_by?: string | null
+          requirements?: string | null
+          salary_range?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          posted_by?: string | null
+          requirements?: string | null
+          salary_range?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_posted_by_fkey"
+            columns: ["posted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchandise: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_digital: boolean | null
+          name: string
+          price: number
+          stock: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_digital?: boolean | null
+          name: string
+          price: number
+          stock?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_digital?: boolean | null
+          name?: string
+          price?: number
+          stock?: number | null
+        }
+        Relationships: []
+      }
+      news: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_external: boolean | null
+          published_at: string | null
+          source: string | null
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_external?: boolean | null
+          published_at?: string | null
+          source?: string | null
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_external?: boolean | null
+          published_at?: string | null
+          source?: string | null
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          merchandise_id: string | null
+          order_id: string | null
+          price: number
+          quantity: number | null
+        }
+        Insert: {
+          id?: string
+          merchandise_id?: string | null
+          order_id?: string | null
+          price: number
+          quantity?: number | null
+        }
+        Update: {
+          id?: string
+          merchandise_id?: string | null
+          order_id?: string | null
+          price?: number
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_merchandise_id_fkey"
+            columns: ["merchandise_id"]
+            isOneToOne: false
+            referencedRelation: "merchandise"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          shipping_address: string | null
+          status: string | null
+          total_amount: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          shipping_address?: string | null
+          status?: string | null
+          total_amount: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          shipping_address?: string | null
+          status?: string | null
+          total_amount?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          company: string | null
+          created_at: string | null
+          current_education: string | null
+          email: string | null
+          facebook_url: string | null
+          full_name: string
+          id: string
+          instagram_url: string | null
+          is_advisor: boolean | null
+          is_alumni: boolean | null
+          linkedin_url: string | null
+          past_education: string | null
+          phone: string | null
+          photo_url: string | null
+          position: string | null
+          semester: string | null
+          team_role: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          current_education?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          full_name: string
+          id?: string
+          instagram_url?: string | null
+          is_advisor?: boolean | null
+          is_alumni?: boolean | null
+          linkedin_url?: string | null
+          past_education?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          position?: string | null
+          semester?: string | null
+          team_role?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          current_education?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          full_name?: string
+          id?: string
+          instagram_url?: string | null
+          is_advisor?: boolean | null
+          is_alumni?: boolean | null
+          linkedin_url?: string | null
+          past_education?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          position?: string | null
+          semester?: string | null
+          team_role?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +463,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
