@@ -1,11 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Users, Briefcase, Home, Trophy, Newspaper, ShoppingBag, Shield } from "lucide-react";
 import logo from "@/assets/mongol-tori-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (mounted) setUser(data?.user ?? null);
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    init();
+
+    const { data: { subscription } = {} as any } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      try { subscription?.unsubscribe(); } catch (e) {}
+    };
+  }, []);
 
   const navLinks = [
     { name: "Home", href: "/", icon: Home },
@@ -52,11 +81,31 @@ const Navbar = () => {
               <Shield size={16} />
               Admin
             </Link>
-            <Link to="/auth">
-              <button className="btn-primary px-5 py-2 rounded-lg text-sm">
-                Join Network
-              </button>
-            </Link>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">{user.email}</span>
+                <button
+                  onClick={async () => {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                      toast({ title: "Sign out failed", description: error.message, variant: "destructive" });
+                    } else {
+                      toast({ title: "Signed out" });
+                      navigate("/");
+                    }
+                  }}
+                  className="btn-outline px-4 py-2 rounded-lg text-sm"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <button className="btn-primary px-5 py-2 rounded-lg text-sm">
+                  Join Network
+                </button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -88,11 +137,29 @@ const Navbar = () => {
                   Admin
                 </button>
               </Link>
-              <Link to="/auth" className="flex-1" onClick={() => setIsOpen(false)}>
-                <button className="btn-primary w-full py-3 rounded-lg text-sm">
-                  Join
+              {user ? (
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                      toast({ title: "Sign out failed", description: error.message, variant: "destructive" });
+                    } else {
+                      toast({ title: "Signed out" });
+                      navigate("/");
+                    }
+                  }}
+                  className="btn-primary flex-1 w-full py-3 rounded-lg text-sm"
+                >
+                  Logout
                 </button>
-              </Link>
+              ) : (
+                <Link to="/auth" className="flex-1" onClick={() => setIsOpen(false)}>
+                  <button className="btn-primary w-full py-3 rounded-lg text-sm">
+                    Join
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         )}
