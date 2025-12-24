@@ -21,7 +21,7 @@ const advisors = [
     ],
   },
   {
-    name: "Prof. Ayesha Siddiqua",
+    name: "Prof. Nameera Amin",
     role: "Advisor" as const,
     photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces",
     email: "ayesha.siddiqua@bracu.ac.bd",
