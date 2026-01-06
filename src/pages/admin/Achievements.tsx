@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { getAchievements, createAchievement, updateAchievement, deleteAchievement } from "@/integrations/api/client";
+import type { Achievement } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type Achievement = Tables<"achievements">;
 
 const AchievementsAdmin = () => {
   const qc = useQueryClient();
@@ -20,19 +18,13 @@ const AchievementsAdmin = () => {
   const { data: achievements, isLoading } = useQuery({
     queryKey: ["achievements"],
     queryFn: async (): Promise<Achievement[]> => {
-      const { data, error } = await supabase
-        .from("achievements")
-        .select("*")
-        .order("date", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await getAchievements();
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (payload: TablesInsert<"achievements">) => {
-      const { error } = await supabase.from("achievements").insert(payload);
-      if (error) throw error;
+    mutationFn: async (payload: AchievementInsert) => {
+      await createAchievement(payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["achievements"] });
@@ -44,9 +36,8 @@ const AchievementsAdmin = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Achievement> }) => {
-      const { error } = await supabase.from("achievements").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<AchievementInsert> }) => {
+      await updateAchievement(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["achievements"] });
@@ -59,8 +50,7 @@ const AchievementsAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("achievements").delete().eq("id", id);
-      if (error) throw error;
+      await deleteAchievement(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["achievements"] });

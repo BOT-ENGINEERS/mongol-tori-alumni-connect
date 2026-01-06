@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { getJobs, createJob, updateJob, deleteJob } from "@/integrations/api/client";
+import type { Job } from "@/integrations/mysql/types";
 import { Pencil, Trash, Plus, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type Job = Tables<"jobs">;
 
 const JobsAdmin = () => {
   const qc = useQueryClient();
@@ -23,19 +21,13 @@ const JobsAdmin = () => {
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["jobs"],
     queryFn: async (): Promise<Job[]> => {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await getJobs();
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (payload: TablesInsert<"jobs">) => {
-      const { error } = await supabase.from("jobs").insert(payload);
-      if (error) throw error;
+    mutationFn: async (payload: JobInsert) => {
+      await createJob(payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
@@ -47,9 +39,8 @@ const JobsAdmin = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Job> }) => {
-      const { error } = await supabase.from("jobs").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<JobInsert> }) => {
+      await updateJob(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
@@ -62,8 +53,7 @@ const JobsAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("jobs").delete().eq("id", id);
-      if (error) throw error;
+      await deleteJob(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs"] });

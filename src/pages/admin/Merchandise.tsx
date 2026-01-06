@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { getMerchandise, createMerchandise, updateMerchandise, deleteMerchandise } from "@/integrations/api/client";
+import type { Merchandise } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type Merchandise = Tables<"merchandise">;
 
 const MerchandiseAdmin = () => {
   const qc = useQueryClient();
@@ -24,19 +22,13 @@ const MerchandiseAdmin = () => {
   const { data: merchandise, isLoading } = useQuery({
     queryKey: ["merchandise"],
     queryFn: async (): Promise<Merchandise[]> => {
-      const { data, error } = await supabase
-        .from("merchandise")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await getMerchandise();
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (payload: TablesInsert<"merchandise">) => {
-      const { error } = await supabase.from("merchandise").insert(payload);
-      if (error) throw error;
+    mutationFn: async (payload: MerchandiseInsert) => {
+      await createMerchandise(payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["merchandise"] });
@@ -48,9 +40,8 @@ const MerchandiseAdmin = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Merchandise> }) => {
-      const { error } = await supabase.from("merchandise").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<MerchandiseInsert> }) => {
+      await updateMerchandise(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["merchandise"] });
@@ -63,8 +54,7 @@ const MerchandiseAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("merchandise").delete().eq("id", id);
-      if (error) throw error;
+      await deleteMerchandise(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["merchandise"] });

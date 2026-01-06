@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { getNews, createNews, updateNews, deleteNews } from "@/integrations/api/client";
+import type { News } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type News = Tables<"news">;
 
 const NewsAdmin = () => {
   const qc = useQueryClient();
@@ -22,19 +20,13 @@ const NewsAdmin = () => {
   const { data: news, isLoading } = useQuery({
     queryKey: ["news"],
     queryFn: async (): Promise<News[]> => {
-      const { data, error } = await supabase
-        .from("news")
-        .select("*")
-        .order("published_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await getNews();
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (payload: TablesInsert<"news">) => {
-      const { error } = await supabase.from("news").insert(payload);
-      if (error) throw error;
+    mutationFn: async (payload: NewsInsert) => {
+      await createNews(payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["news"] });
@@ -46,9 +38,8 @@ const NewsAdmin = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<News> }) => {
-      const { error } = await supabase.from("news").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<NewsInsert> }) => {
+      await updateNews(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["news"] });
@@ -61,8 +52,7 @@ const NewsAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("news").delete().eq("id", id);
-      if (error) throw error;
+      await deleteNews(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["news"] });

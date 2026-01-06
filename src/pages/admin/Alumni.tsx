@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import { getProfiles, updateProfile, deleteProfile } from "@/integrations/api/client";
+import type { Profile } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type Profile = Tables<"profiles">;
 
 const AlumniAdmin = () => {
   const qc = useQueryClient();
@@ -24,20 +22,14 @@ const AlumniAdmin = () => {
   const { data: alumni, isLoading } = useQuery({
     queryKey: ["profiles", "alumni"],
     queryFn: async (): Promise<Profile[]> => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("is_alumni", true)
-        .order("full_name");
-      if (error) throw error;
-      return data;
+      const allProfiles = await getProfiles();
+      return allProfiles.filter(p => p.is_alumni);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Profile> }) => {
-      const { error } = await supabase.from("profiles").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<ProfileInsert> }) => {
+      await updateProfile(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });
@@ -50,8 +42,7 @@ const AlumniAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("profiles").delete().eq("id", id);
-      if (error) throw error;
+      await deleteProfile(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });

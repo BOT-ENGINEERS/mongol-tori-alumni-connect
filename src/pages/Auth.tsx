@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { signIn, signUp } from "@/integrations/api/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/mongol-tori-logo.png";
 
@@ -19,20 +19,13 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const response = await signIn(email, password);
+        if (response.error) throw new Error(response.error);
         toast({ title: "Welcome back!" });
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName },
-          },
-        });
-        if (error) throw error;
+        const response = await signUp(email, password, fullName);
+        if (response.error) throw new Error(response.error);
         toast({ title: "Account created successfully!" });
         navigate("/");
       }

@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import { getProfiles, updateProfile, deleteProfile } from "@/integrations/api/client";
+import type { Profile } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft, UserCheck, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-type Profile = Tables<"profiles">;
 
 const MembersAdmin = () => {
   const qc = useQueryClient();
@@ -23,21 +21,14 @@ const MembersAdmin = () => {
   const { data: profiles, isLoading } = useQuery({
     queryKey: ["profiles", "members"],
     queryFn: async (): Promise<Profile[]> => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("is_alumni", false)
-        .eq("is_advisor", false)
-        .order("full_name");
-      if (error) throw error;
-      return data;
+      const allProfiles = await getProfiles();
+      return allProfiles.filter(p => !p.is_alumni && !p.is_advisor);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Profile> }) => {
-      const { error } = await supabase.from("profiles").update(payload).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<ProfileInsert> }) => {
+      await updateProfile(id, payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });
@@ -50,8 +41,7 @@ const MembersAdmin = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("profiles").delete().eq("id", id);
-      if (error) throw error;
+      await deleteProfile(id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });

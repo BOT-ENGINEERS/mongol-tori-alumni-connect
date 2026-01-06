@@ -1,0 +1,488 @@
+import express from 'express';
+import cors from 'cors';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.API_PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Create MySQL connection pool
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'alumni_connect',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+// Utility functions
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// Auth Routes
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password, fullName } = req.body;
+    
+    const connection = await pool.getConnection();
+    
+    try {
+      // Check if user exists
+      const [existing] = await connection.execute(
+        'SELECT id FROM users WHERE email = ?',
+        [email]
+      );
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+      
+      const userId = generateUUID();
+      const passwordHash = Buffer.from(password).toString('base64');
+      
+      // Create user
+      await connection.execute(
+        'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)',
+        [userId, email, passwordHash]
+      );
+      
+      // Create profile
+      await connection.execute(
+        `INSERT INTO profiles (id, user_id, full_name, email, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, NOW(), NOW())`,
+        [generateUUID(), userId, fullName, email]
+      );
+      
+      res.json({ user: { id: userId, email } });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const connection = await pool.getConnection();
+    
+    try {
+      const [results] = await connection.execute(
+        'SELECT id, password_hash FROM users WHERE email = ?',
+        [email]
+      );
+      
+      if (results.length === 0) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      
+      const user = results[0];
+      const passwordHash = Buffer.from(password).toString('base64');
+      
+      if (passwordHash !== user.password_hash) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      
+      res.json({ user: { id: user.id, email } });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Signin error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Profile Routes
+app.get('/api/profiles', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [profiles] = await connection.execute('SELECT * FROM profiles');
+      res.json(profiles);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching profiles:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/profiles/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { full_name, bio, avatar_url, location, phone } = req.body;
+    
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute(
+        `UPDATE profiles SET full_name = ?, bio = ?, avatar_url = ?, location = ?, phone = ?, updated_at = NOW() 
+         WHERE id = ?`,
+        [full_name, bio, avatar_url, location, phone, id]
+      );
+      
+      const [updated] = await connection.execute('SELECT * FROM profiles WHERE id = ?', [id]);
+      res.json(updated[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/profiles/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute('DELETE FROM profiles WHERE id = ?', [id]);
+      res.json({ success: true });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// News Routes
+app.get('/api/news', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [news] = await connection.execute('SELECT * FROM news ORDER BY published_at DESC');
+      res.json(news);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/news', async (req, res) => {
+  try {
+    const { title, content, source, source_url, image_url, is_external } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      const id = generateUUID();
+      await connection.execute(
+        `INSERT INTO news (id, title, content, source, source_url, image_url, is_external, published_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [id, title, content, source, source_url, image_url, is_external || false]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM news WHERE id = ?', [id]);
+      res.status(201).json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error creating news:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/news/:id', async (req, res) => {
+  try {
+    const { title, content, source, source_url, image_url, is_external } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.execute(
+        `UPDATE news SET title = ?, content = ?, source = ?, source_url = ?, image_url = ?, is_external = ?
+         WHERE id = ?`,
+        [title, content, source, source_url, image_url, is_external, req.params.id]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM news WHERE id = ?', [req.params.id]);
+      res.json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating news:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/news/:id', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute('DELETE FROM news WHERE id = ?', [req.params.id]);
+      res.json({ success: true });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting news:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Jobs Routes
+app.get('/api/jobs', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [jobs] = await connection.execute('SELECT * FROM jobs WHERE is_active = true ORDER BY created_at DESC');
+      res.json(jobs);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/jobs', async (req, res) => {
+  try {
+    const { title, company, location, type, salary_range, description, requirements } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      const id = generateUUID();
+      await connection.execute(
+        `INSERT INTO jobs (id, title, company, location, type, salary_range, description, requirements, created_at, updated_at, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), true)`,
+        [id, title, company, location, type, salary_range, description, requirements]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM jobs WHERE id = ?', [id]);
+      res.status(201).json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error creating job:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/jobs/:id', async (req, res) => {
+  try {
+    const { title, company, location, type, salary_range, description, requirements } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.execute(
+        `UPDATE jobs SET title = ?, company = ?, location = ?, type = ?, salary_range = ?, description = ?, requirements = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [title, company, location, type, salary_range, description, requirements, req.params.id]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
+      res.json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating job:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/jobs/:id', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute('DELETE FROM jobs WHERE id = ?', [req.params.id]);
+      res.json({ success: true });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting job:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Merchandise Routes
+app.get('/api/merchandise', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [items] = await connection.execute('SELECT * FROM merchandise WHERE is_active = true');
+      res.json(items);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching merchandise:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/merchandise', async (req, res) => {
+  try {
+    const { name, description, price, image_url, category, is_digital, stock } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      const id = generateUUID();
+      await connection.execute(
+        `INSERT INTO merchandise (id, name, description, price, image_url, category, is_digital, stock, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, true, NOW())`,
+        [id, name, description, price, image_url, category, is_digital || false, stock || 0]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM merchandise WHERE id = ?', [id]);
+      res.status(201).json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error creating merchandise:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/merchandise/:id', async (req, res) => {
+  try {
+    const { name, description, price, image_url, category, is_digital, stock, is_active } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.execute(
+        `UPDATE merchandise SET name = ?, description = ?, price = ?, image_url = ?, category = ?, is_digital = ?, stock = ?, is_active = ?
+         WHERE id = ?`,
+        [name, description, price, image_url, category, is_digital, stock, is_active, req.params.id]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM merchandise WHERE id = ?', [req.params.id]);
+      res.json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating merchandise:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/merchandise/:id', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute('DELETE FROM merchandise WHERE id = ?', [req.params.id]);
+      res.json({ success: true });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting merchandise:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Achievements Routes
+app.get('/api/achievements', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [achievements] = await connection.execute('SELECT * FROM achievements ORDER BY date DESC');
+      res.json(achievements);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/achievements', async (req, res) => {
+  try {
+    const { title, description, date, image_url } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      const id = generateUUID();
+      await connection.execute(
+        `INSERT INTO achievements (id, title, description, date, image_url, created_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [id, title, description, date, image_url]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM achievements WHERE id = ?', [id]);
+      res.status(201).json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error creating achievement:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/achievements/:id', async (req, res) => {
+  try {
+    const { title, description, date, image_url } = req.body;
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.execute(
+        `UPDATE achievements SET title = ?, description = ?, date = ?, image_url = ? WHERE id = ?`,
+        [title, description, date, image_url, req.params.id]
+      );
+      
+      const [result] = await connection.execute('SELECT * FROM achievements WHERE id = ?', [req.params.id]);
+      res.json(result[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating achievement:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/achievements/:id', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute('DELETE FROM achievements WHERE id = ?', [req.params.id]);
+      res.json({ success: true });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting achievement:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Database: ${process.env.DB_NAME || 'alumni_connect'}`);
+});
