@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Users, Briefcase, Home, Trophy, Newspaper, ShoppingBag, Shield } from "lucide-react";
+import { Menu, X, Users, Briefcase, Home, Trophy, Newspaper, ShoppingBag, Shield, GraduationCap } from "lucide-react";
 import logo from "@/assets/mongol-tori-logo.png";
 import { getCurrentUser, signOut } from "@/integrations/api/client";
 import { useToast } from "@/hooks/use-toast";
@@ -71,6 +71,19 @@ const Navbar = () => {
             </Link>
             {user ? (
               <>
+                <div className="flex items-center gap-2">
+                  {user.userType === "alumni" ? (
+                    <>
+                      <Users size={16} className="text-primary" />
+                      <span className="text-xs font-semibold text-primary">ALUMNI</span>
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap size={16} className="text-blue-500" />
+                      <span className="text-xs font-semibold text-blue-500">STUDENT</span>
+                    </>
+                  )}
+                </div>
                 <span className="text-sm text-muted-foreground">{user.email}</span>
                 <button
                   onClick={handleLogout}
@@ -112,6 +125,21 @@ const Navbar = () => {
               </a>
             ))}
             <div className="flex gap-3 mt-4 pt-4 border-t border-border">
+              {user && (
+                <div className="w-full py-2 px-3 rounded-lg bg-muted text-center text-xs font-semibold flex items-center justify-center gap-1">
+                  {user.userType === "alumni" ? (
+                    <>
+                      <Users size={14} className="text-primary" />
+                      <span className="text-primary">ALUMNI</span>
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap size={14} className="text-blue-500" />
+                      <span className="text-blue-500">STUDENT</span>
+                    </>
+                  )}
+                </div>
+              )}
               <Link to="/admin" className="flex-1" onClick={() => setIsOpen(false)}>
                 <button className="btn-outline w-full py-3 rounded-lg text-sm">
                   Admin

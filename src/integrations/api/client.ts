@@ -28,9 +28,9 @@ export async function apiCall(endpoint: string, method: string = 'GET', data?: a
 }
 
 // Auth API functions
-export async function signUp(email: string, password: string, fullName: string) {
+export async function signUp(email: string, password: string, fullName: string, userType: string = 'student') {
   try {
-    const user = await apiCall('/api/auth/signup', 'POST', { email, password, fullName });
+    const user = await apiCall('/api/auth/signup', 'POST', { email, password, fullName, userType });
     localStorage.setItem('currentUser', JSON.stringify(user));
     return { user, error: null };
   } catch (error: any) {

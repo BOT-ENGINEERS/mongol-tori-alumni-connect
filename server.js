@@ -35,7 +35,7 @@ function generateUUID() {
 // Auth Routes
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, userType } = req.body;
     
     const connection = await pool.getConnection();
     
@@ -53,20 +53,20 @@ app.post('/api/auth/signup', async (req, res) => {
       const userId = generateUUID();
       const passwordHash = Buffer.from(password).toString('base64');
       
-      // Create user
+      // Create user with user_type
       await connection.execute(
-        'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)',
-        [userId, email, passwordHash]
+        'INSERT INTO users (id, email, password_hash, user_type) VALUES (?, ?, ?, ?)',
+        [userId, email, passwordHash, userType || 'student']
       );
       
       // Create profile
       await connection.execute(
-        `INSERT INTO profiles (id, user_id, full_name, email, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, NOW(), NOW())`,
-        [generateUUID(), userId, fullName, email]
+        `INSERT INTO profiles (id, user_id, full_name, email, is_alumni, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+        [generateUUID(), userId, fullName, email, userType === 'alumni' ? 1 : 0]
       );
       
-      res.json({ user: { id: userId, email } });
+      res.json({ user: { id: userId, email, userType: userType || 'student' } });
     } finally {
       connection.release();
     }
@@ -84,7 +84,7 @@ app.post('/api/auth/signin', async (req, res) => {
     
     try {
       const [results] = await connection.execute(
-        'SELECT id, password_hash FROM users WHERE email = ?',
+        'SELECT id, password_hash, user_type FROM users WHERE email = ?',
         [email]
       );
       
@@ -99,7 +99,7 @@ app.post('/api/auth/signin', async (req, res) => {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
       
-      res.json({ user: { id: user.id, email } });
+      res.json({ user: { id: user.id, email, userType: user.user_type } });
     } finally {
       connection.release();
     }
