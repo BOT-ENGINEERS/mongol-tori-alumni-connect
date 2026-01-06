@@ -1,5 +1,7 @@
 import { ShoppingBag, ShoppingCart, Tag } from "lucide-react";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart, CartItem } from "@/hooks/use-cart";
+import { useToast } from "@/hooks/use-toast";
 
 interface Product {
   id: string;
@@ -56,10 +58,23 @@ const products: Product[] = [
 ];
 
 const MerchandiseSection = () => {
-  const [cart, setCart] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const { cart, addToCart } = useCart();
+  const { toast } = useToast();
 
-  const addToCart = (productId: string) => {
-    setCart([...cart, productId]);
+  const handleAddToCart = (product: Product) => {
+    const cartItem: CartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+    };
+    addToCart(cartItem);
+    toast({
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart`,
+    });
   };
 
   return (
@@ -79,12 +94,15 @@ const MerchandiseSection = () => {
               Show your support with exclusive Mongol-Tori merchandise
             </p>
           </div>
-          <button className="btn-outline px-6 py-3 rounded-xl flex items-center gap-2 relative">
+          <button 
+            onClick={() => navigate("/cart")}
+            className="btn-outline px-6 py-3 rounded-xl flex items-center gap-2 relative"
+          >
             <ShoppingCart size={18} />
             View Cart
-            {cart.length > 0 && (
+            {cart.items.length > 0 && (
               <span className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                {cart.length}
+                {cart.items.length}
               </span>
             )}
           </button>
@@ -126,7 +144,7 @@ const MerchandiseSection = () => {
                     <span className="font-black text-xl text-foreground">৳{product.price}</span>
                   </div>
                   <button
-                    onClick={() => addToCart(product.id)}
+                    onClick={() => handleAddToCart(product)}
                     className="btn-primary px-4 py-2 rounded-lg text-sm"
                     disabled={!product.inStock}
                   >

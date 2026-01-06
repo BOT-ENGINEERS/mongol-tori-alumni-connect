@@ -477,6 +477,107 @@ app.delete('/api/achievements/:id', async (req, res) => {
   }
 });
 
+// Order Routes
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { fullName, email, phone, address, items, total, status } = req.body;
+    
+    const connection = await pool.getConnection();
+    try {
+      const orderId = generateUUID();
+      
+      // Create order
+      await connection.execute(
+        `INSERT INTO orders (id, full_name, email, phone, address, total, status, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [orderId, fullName, email, phone, address, total, status || 'pending']
+      );
+      
+      // Create order items
+      for (const item of items) {
+        await connection.execute(
+          `INSERT INTO order_items (id, order_id, merchandise_id, quantity, price, created_at) 
+           VALUES (?, ?, ?, ?, ?, NOW())`,
+          [generateUUID(), orderId, item.id, item.quantity, item.price]
+        );
+      }
+      
+      const [orders] = await connection.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
+      res.json(orders[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      const [orders] = await connection.execute('SELECT * FROM orders ORDER BY created_at DESC');
+      res.json(orders);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const connection = await pool.getConnection();
+    try {
+      const [orders] = await connection.execute('SELECT * FROM orders WHERE id = ?', [id]);
+      
+      if (orders.length === 0) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
+      const [items] = await connection.execute(
+        'SELECT * FROM order_items WHERE order_id = ?',
+        [id]
+      );
+      
+      res.json({ ...orders[0], items });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const connection = await pool.getConnection();
+    try {
+      await connection.execute(
+        'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
+        [status, id]
+      );
+      
+      const [updated] = await connection.execute('SELECT * FROM orders WHERE id = ?', [id]);
+      res.json(updated[0]);
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running' });
