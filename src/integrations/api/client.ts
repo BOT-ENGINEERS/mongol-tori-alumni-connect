@@ -30,9 +30,12 @@ export async function apiCall(endpoint: string, method: string = 'GET', data?: a
 // Auth API functions
 export async function signUp(email: string, password: string, fullName: string, userType: string = 'student') {
   try {
-    const user = await apiCall('/api/auth/signup', 'POST', { email, password, fullName, userType });
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    return { user, error: null };
+    const response = await apiCall('/api/auth/signup', 'POST', { email, password, fullName, userType });
+    console.log('Signup response:', response);
+    // Extract user from response (backend returns { user: {...} })
+    const userData = response.user || response;
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    return { user: userData, error: null };
   } catch (error: any) {
     return { user: null, error: error.message };
   }
@@ -40,9 +43,12 @@ export async function signUp(email: string, password: string, fullName: string, 
 
 export async function signIn(email: string, password: string) {
   try {
-    const user = await apiCall('/api/auth/signin', 'POST', { email, password });
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    return { user, error: null };
+    const response = await apiCall('/api/auth/signin', 'POST', { email, password });
+    console.log('Signin response:', response);
+    // Extract user from response (backend returns { user: {...} })
+    const userData = response.user || response;
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    return { user: userData, error: null };
   } catch (error: any) {
     return { user: null, error: error.message };
   }

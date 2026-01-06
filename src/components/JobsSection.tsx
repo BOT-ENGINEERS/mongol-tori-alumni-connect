@@ -1,4 +1,5 @@
 import { Briefcase, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 import JobCard from "./JobCard";
 
 const mockJobs = [
@@ -60,10 +61,12 @@ const JobsSection = () => {
               Exclusive opportunities posted by our alumni network for current members
             </p>
           </div>
-          <button className="btn-primary px-6 py-3 rounded-xl flex items-center gap-2">
-            <Plus size={18} />
-            Post a Job
-          </button>
+          <Link to="/jobs">
+            <button className="btn-primary px-6 py-3 rounded-xl flex items-center gap-2">
+              <Plus size={18} />
+              View All Jobs
+            </button>
+          </Link>
         </div>
 
         {/* Jobs Grid */}

@@ -21,9 +21,9 @@ const AlumniAdmin = () => {
 
   const { data: alumni, isLoading } = useQuery({
     queryKey: ["profiles", "alumni"],
-    queryFn: async (): Promise<Profile[]> => {
+    queryFn: async (): Promise<(Profile & { user_type?: string })[]> => {
       const allProfiles = await getProfiles();
-      return allProfiles.filter(p => p.is_alumni);
+      return allProfiles.filter(p => p.user_type === 'alumni');
     },
   });
 

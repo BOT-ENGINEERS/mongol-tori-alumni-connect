@@ -36,6 +36,7 @@ function generateUUID() {
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, password, fullName, userType } = req.body;
+    console.log('Signup attempt:', { email, fullName, userType });
     
     const connection = await pool.getConnection();
     
@@ -54,9 +55,12 @@ app.post('/api/auth/signup', async (req, res) => {
       const passwordHash = Buffer.from(password).toString('base64');
       
       // Create user with user_type
+      const finalUserType = userType || 'student';
+      console.log('Creating user with type:', finalUserType);
+      
       await connection.execute(
         'INSERT INTO users (id, email, password_hash, user_type) VALUES (?, ?, ?, ?)',
-        [userId, email, passwordHash, userType || 'student']
+        [userId, email, passwordHash, finalUserType]
       );
       
       // Create profile
@@ -66,7 +70,7 @@ app.post('/api/auth/signup', async (req, res) => {
         [generateUUID(), userId, fullName, email, userType === 'alumni' ? 1 : 0]
       );
       
-      res.json({ user: { id: userId, email, userType: userType || 'student' } });
+      res.json({ user: { id: userId, email, userType: finalUserType } });
     } finally {
       connection.release();
     }
@@ -84,7 +88,7 @@ app.post('/api/auth/signin', async (req, res) => {
     
     try {
       const [results] = await connection.execute(
-        'SELECT id, password_hash, user_type FROM users WHERE email = ?',
+        'SELECT id, email, password_hash, user_type FROM users WHERE email = ?',
         [email]
       );
       
@@ -93,13 +97,18 @@ app.post('/api/auth/signin', async (req, res) => {
       }
       
       const user = results[0];
+      console.log('Login user from DB:', { email: user.email, user_type: user.user_type, user_type_type: typeof user.user_type });
+      
       const passwordHash = Buffer.from(password).toString('base64');
       
       if (passwordHash !== user.password_hash) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
       
-      res.json({ user: { id: user.id, email, userType: user.user_type } });
+      const responseData = { user: { id: user.id, email: user.email, userType: user.user_type } };
+      console.log('Signin response:', responseData);
+      
+      res.json(responseData);
     } finally {
       connection.release();
     }
@@ -114,7 +123,11 @@ app.get('/api/profiles', async (req, res) => {
   try {
     const connection = await pool.getConnection();
     try {
-      const [profiles] = await connection.execute('SELECT * FROM profiles');
+      const [profiles] = await connection.execute(`
+        SELECT p.*, u.user_type 
+        FROM profiles p 
+        LEFT JOIN users u ON p.user_id = u.id
+      `);
       res.json(profiles);
     } finally {
       connection.release();
@@ -128,17 +141,40 @@ app.get('/api/profiles', async (req, res) => {
 app.put('/api/profiles/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, bio, avatar_url, location, phone } = req.body;
+    const { full_name, bio, avatar_url, location, phone, company, position, is_alumni, user_type } = req.body;
     
     const connection = await pool.getConnection();
     try {
+      // Get the profile to find user_id
+      const [profileResult] = await connection.execute('SELECT user_id FROM profiles WHERE id = ?', [id]);
+      
+      if (profileResult.length === 0) {
+        return res.status(404).json({ error: 'Profile not found' });
+      }
+      
+      const userId = profileResult[0].user_id;
+      
+      // Update profile fields
       await connection.execute(
-        `UPDATE profiles SET full_name = ?, bio = ?, avatar_url = ?, location = ?, phone = ?, updated_at = NOW() 
+        `UPDATE profiles SET 
+         full_name = ?, bio = ?, avatar_url = ?, location = ?, phone = ?, company = ?, position = ?, is_alumni = ?, updated_at = NOW() 
          WHERE id = ?`,
-        [full_name, bio, avatar_url, location, phone, id]
+        [full_name || null, bio || null, avatar_url || null, location || null, phone || null, company || null, position || null, is_alumni || 0, id]
       );
       
-      const [updated] = await connection.execute('SELECT * FROM profiles WHERE id = ?', [id]);
+      // Update user type if provided
+      if (user_type) {
+        await connection.execute(
+          'UPDATE users SET user_type = ? WHERE id = ?',
+          [user_type, userId]
+        );
+      }
+      
+      // Return updated profile with user_type
+      const [updated] = await connection.execute(
+        `SELECT p.*, u.user_type FROM profiles p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ?`, 
+        [id]
+      );
       res.json(updated[0]);
     } finally {
       connection.release();

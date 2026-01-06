@@ -20,9 +20,9 @@ const MembersAdmin = () => {
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ["profiles", "members"],
-    queryFn: async (): Promise<Profile[]> => {
+    queryFn: async (): Promise<(Profile & { user_type?: string })[]> => {
       const allProfiles = await getProfiles();
-      return allProfiles.filter(p => !p.is_alumni && !p.is_advisor);
+      return allProfiles.filter(p => p.user_type !== 'alumni');
     },
   });
 
@@ -52,8 +52,11 @@ const MembersAdmin = () => {
     },
   });
 
-  const promoteToAlumni = async (profile: Profile) => {
-    await updateMutation.mutateAsync({ id: profile.id, payload: { is_alumni: true } });
+  const promoteToAlumni = async (profile: any) => {
+    await updateMutation.mutateAsync({ 
+      id: profile.id, 
+      payload: { is_alumni: true, user_type: 'alumni' } 
+    });
     toast({ title: `${profile.full_name} promoted to Alumni` });
   };
 

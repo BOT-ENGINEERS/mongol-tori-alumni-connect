@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMerchandise, createMerchandise, updateMerchandise, deleteMerchandise } from "@/integrations/api/client";
-import type { Merchandise } from "@/integrations/mysql/types";
+import type { Merchandise, MerchandiseInsert } from "@/integrations/mysql/types";
 import { Pencil, Trash, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";

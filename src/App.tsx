@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import Jobs from "./pages/Jobs";
 import JobsAdmin from "./pages/admin/Jobs";
 import AchievementsAdmin from "./pages/admin/Achievements";
 import NewsAdmin from "./pages/admin/News";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/jobs" element={<Jobs />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/jobs" element={<JobsAdmin />} />
           <Route path="/admin/achievements" element={<AchievementsAdmin />} />
